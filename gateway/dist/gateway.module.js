@@ -16,58 +16,51 @@ let GatewayModule = class GatewayModule {
 exports.GatewayModule = GatewayModule;
 exports.GatewayModule = GatewayModule = __decorate([
     (0, common_1.Module)({
-        imports: [],
-        controllers: [user_controller_1.UserController, task_controller_1.TaskController],
-        providers: [
-            {
-                provide: "USER_SERVICE",
-                useFactory() {
-                    return microservices_1.ClientProxyFactory.create({
-                        transport: microservices_1.Transport.RMQ,
-                        options: {
-                            urls: ["amqp://localhost:5672"],
-                            queue: "user-service",
-                            queueOptions: {
-                                durable: false,
-                            },
+        imports: [
+            microservices_1.ClientsModule.register([
+                {
+                    name: "USER_SERVICE",
+                    transport: microservices_1.Transport.KAFKA,
+                    options: {
+                        client: {
+                            clientId: "user",
+                            brokers: ["localhost:29092"],
                         },
-                    });
-                },
-                inject: [],
-            },
-            {
-                provide: "TOKEN_SERVICE",
-                useFactory() {
-                    return microservices_1.ClientProxyFactory.create({
-                        transport: microservices_1.Transport.RMQ,
-                        options: {
-                            urls: ["amqp://localhost:5672"],
-                            queue: "token-service",
-                            queueOptions: {
-                                durable: false,
-                            },
+                        consumer: {
+                            groupId: "user-consumer",
                         },
-                    });
+                    },
                 },
-                inject: [],
-            },
-            {
-                provide: "TASK_SERVICE",
-                useFactory() {
-                    return microservices_1.ClientProxyFactory.create({
-                        transport: microservices_1.Transport.RMQ,
-                        options: {
-                            urls: ["amqp://localhost:5672"],
-                            queue: "task-service",
-                            queueOptions: {
-                                durable: false,
-                            },
+                {
+                    name: "TOKEN_SERVICE",
+                    transport: microservices_1.Transport.KAFKA,
+                    options: {
+                        client: {
+                            clientId: "token",
+                            brokers: ["localhost:29092"],
                         },
-                    });
+                        consumer: {
+                            groupId: "token-consumer",
+                        },
+                    },
                 },
-                inject: [],
-            },
+                {
+                    name: "TASK_SERVICE",
+                    transport: microservices_1.Transport.KAFKA,
+                    options: {
+                        client: {
+                            clientId: "task",
+                            brokers: ["localhost:29092"],
+                        },
+                        consumer: {
+                            groupId: "task-consumer",
+                        },
+                    },
+                },
+            ]),
         ],
+        controllers: [user_controller_1.UserController, task_controller_1.TaskController],
+        providers: [],
     })
 ], GatewayModule);
 //# sourceMappingURL=gateway.module.js.map

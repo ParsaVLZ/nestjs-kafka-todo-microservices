@@ -3,63 +3,56 @@ import {
   Controller,
   Get,
   HttpException,
-  HttpStatus,
   Inject,
+  OnModuleInit,
   Post,
   Req,
 } from "@nestjs/common";
-import {ClientProxy} from "@nestjs/microservices";
-import {ApiTags} from "@nestjs/swagger";
+import {ClientKafka} from "@nestjs/microservices";
+import {ApiConsumes, ApiTags} from "@nestjs/swagger";
 import {Request} from "express";
-import {lastValueFrom} from "rxjs";
 import Authorization from "./decorators/auth.decorator";
-import {CreateTaskDto} from "./dto/task.dto";
-import {TaskPatterns} from "./enum/task.events";
-import {ServiceResponse} from "./interface/common/response.interface";
+import { TaskDto } from "./dto/task.dto";
 
-@Controller("task")
-@ApiTags("task")
-export class TaskController {
-  constructor(@Inject("TASK_SERVICE") private taskServiceClient: ClientProxy) {}
+@Controller("/task")
+@ApiTags("Task")
+export class TaskController implements OnModuleInit {
+  constructor(@Inject("TASK_SERVICE") private taskClientService: ClientKafka) {}
 
-  @Get()
-  @Authorization()
-  async tasks(@Req() req: Request) {
-    const {_id: userId} = req.user;
-    const taskResponse: ServiceResponse = await lastValueFrom(
-      this.taskServiceClient.send(TaskPatterns.GetUserTasksById, {userId})
-    );
-    return {
-      message: taskResponse.message,
-      data: {
-        tasks: taskResponse.data,
-      },
-    };
+  async onModuleInit() {
+    this.taskClientService.subscribeToResponseOf("create_task");
+    this.taskClientService.subscribeToResponseOf("user_tasks");
+    await this.taskClientService.connect();
   }
-  @Post()
+  @Post("create")
+  @ApiConsumes("application/x-www-form-urlencoded")
   @Authorization()
-  async create(@Body() taskDto: CreateTaskDto, @Req() req: Request) {
-    const {_id: userId} = req.user;
-    const {error, message, status, data}: ServiceResponse = await lastValueFrom(
-      this.taskServiceClient.send(
-        TaskPatterns.CreateUserTask,
-        Object.assign({}, taskDto, {userId})
-      )
-    );
-    if (error) {
-      throw new HttpException(
-        {
-          message,
-          data: null,
-          error,
-        },
-        status || HttpStatus.INTERNAL_SERVER_ERROR
-      );
+  async createTask(@Body() createDto: TaskDto, @Req() req: Request) {
+    const response: any = await new Promise((resolve, reject) => {
+      this.taskClientService
+        .send("create_task", {
+          title: createDto.title,
+          content: createDto.content,
+          userId: req.user._id,
+        })
+        .subscribe((data) => resolve(data));
+    });
+    if (response?.error) {
+      throw new HttpException(response?.message, response?.status ?? 500);
     }
     return {
-      message,
-      status,
-      data,
+      message: response?.message,
+      data: response?.data,
     };
+  }
+  @Get("user")
+  @Authorization()
+  async userTasks(@Req() req: Request) {
+    const response: any = await new Promise((resolve, reject) => {
+      this.taskClientService
+        .send("user_tasks", {userId: req.user?._id})
+        .subscribe((data) => resolve(data));
+    });
+    return response?.data ?? {tasks: []};
   }
 }

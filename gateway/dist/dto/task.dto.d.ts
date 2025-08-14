@@ -1,4 +1,4 @@
-export declare class CreateTaskDto {
-    name: string;
-    description: string;
+export declare class TaskDto {
+    title: string;
+    content: string;
 }

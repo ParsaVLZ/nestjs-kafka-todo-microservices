@@ -9,17 +9,17 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateTaskDto = void 0;
+exports.TaskDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
-class CreateTaskDto {
+class TaskDto {
 }
-exports.CreateTaskDto = CreateTaskDto;
+exports.TaskDto = TaskDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: "task name" }),
+    (0, swagger_1.ApiProperty)(),
     __metadata("design:type", String)
-], CreateTaskDto.prototype, "name", void 0);
+], TaskDto.prototype, "title", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: "task description" }),
+    (0, swagger_1.ApiProperty)(),
     __metadata("design:type", String)
-], CreateTaskDto.prototype, "description", void 0);
+], TaskDto.prototype, "content", void 0);
 //# sourceMappingURL=task.dto.js.map

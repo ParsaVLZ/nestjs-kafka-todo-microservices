@@ -1,19 +1,14 @@
-import { HttpStatus } from "@nestjs/common";
-import { ClientProxy } from "@nestjs/microservices";
+import { OnModuleInit } from "@nestjs/common";
+import { ClientKafka } from "@nestjs/microservices";
 import { Request } from "express";
-import { CreateTaskDto } from "./dto/task.dto";
-export declare class TaskController {
-    private taskServiceClient;
-    constructor(taskServiceClient: ClientProxy);
-    tasks(req: Request): Promise<{
-        message: string;
-        data: {
-            tasks: any;
-        };
-    }>;
-    create(taskDto: CreateTaskDto, req: Request): Promise<{
-        message: string;
-        status: HttpStatus;
+import { TaskDto } from "./dto/task.dto";
+export declare class TaskController implements OnModuleInit {
+    private taskClientService;
+    constructor(taskClientService: ClientKafka);
+    onModuleInit(): Promise<void>;
+    createTask(createDto: TaskDto, req: Request): Promise<{
+        message: any;
         data: any;
     }>;
+    userTasks(req: Request): Promise<any>;
 }

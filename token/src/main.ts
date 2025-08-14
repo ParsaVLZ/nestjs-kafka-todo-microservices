@@ -1,19 +1,21 @@
 import {NestFactory} from "@nestjs/core";
-import {RmqOptions, Transport} from "@nestjs/microservices";
+import {KafkaOptions, Transport} from "@nestjs/microservices";
 import {TokenModule} from "./token.module";
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice(TokenModule, {
-    transport: Transport.RMQ,
+    transport: Transport.KAFKA,
     options: {
-      urls: ["amqp://localhost:5672"],
-      queue: "token-service",
-      queueOptions: {
-        durable: false,
+      client: {
+        clientId: "token",
+        brokers: ["localhost:29092"],
+      },
+      consumer: {
+        groupId: "token-consumer",
       },
     },
-  } as RmqOptions);
+  } as KafkaOptions);
   await app.listen();
-  console.log("tokenService: localhost:4002");
+  console.log("token Service is running");
 }
 bootstrap();

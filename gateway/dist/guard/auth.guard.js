@@ -15,36 +15,51 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthGuard = void 0;
 const common_1 = require("@nestjs/common");
 const microservices_1 = require("@nestjs/microservices");
-const rxjs_1 = require("rxjs");
 let AuthGuard = class AuthGuard {
     constructor(userClientService, tokenClientService) {
         this.userClientService = userClientService;
         this.tokenClientService = tokenClientService;
+    }
+    async onModuleInit() {
+        this.userClientService.subscribeToResponseOf("get_user_by_id");
+        this.tokenClientService.subscribeToResponseOf("verify_token");
+        await Promise.all([
+            this.tokenClientService.connect(),
+            this.userClientService.connect(),
+        ]);
     }
     async canActivate(context) {
         const httpContext = context.switchToHttp();
         const request = httpContext.getRequest();
         const { authorization = undefined } = request?.headers;
         if (!authorization)
-            throw new common_1.UnauthorizedException("Authorization header is required!");
+            throw new common_1.UnauthorizedException("authorization header is required");
         const [bearer, token] = authorization?.split(" ");
         if (!bearer || bearer?.toLowerCase() !== "bearer")
-            throw new common_1.UnauthorizedException("Bearer token is incorrect!");
+            throw new common_1.UnauthorizedException("bearer token is incorrect");
         if (!token)
-            throw new common_1.UnauthorizedException("Token is required!");
-        const verifyTokenResponse = await (0, rxjs_1.lastValueFrom)(this.tokenClientService.send("verify_token", { token }));
+            throw new common_1.UnauthorizedException("token is required");
+        const verifyTokenResponse = await new Promise((resolve, reject) => {
+            this.tokenClientService
+                .send("verify_token", { token })
+                .subscribe((data) => resolve(data));
+        });
         if (!verifyTokenResponse || verifyTokenResponse?.error) {
             throw new common_1.HttpException(verifyTokenResponse?.message, verifyTokenResponse?.status);
         }
         const { data } = verifyTokenResponse;
         if (!data || !data?.userId)
-            throw new common_1.UnauthorizedException("User account not found!");
-        const userResponse = await (0, rxjs_1.lastValueFrom)(this.userClientService.send("get_user_by_id", { userId: data?.userId }));
+            throw new common_1.UnauthorizedException("not found user account");
+        const userResponse = await new Promise((resolve, reject) => {
+            this.userClientService
+                .send("get_user_by_id", { userId: data?.userId })
+                .subscribe((data) => resolve(data));
+        });
         if (userResponse?.error) {
             throw new common_1.HttpException(userResponse?.message, userResponse?.status);
         }
         if (!userResponse?.data?.user) {
-            throw new common_1.UnauthorizedException("User account not found!");
+            throw new common_1.UnauthorizedException("not found user account");
         }
         request.user = userResponse?.data?.user;
         return true;
@@ -55,7 +70,7 @@ exports.AuthGuard = AuthGuard = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)("USER_SERVICE")),
     __param(1, (0, common_1.Inject)("TOKEN_SERVICE")),
-    __metadata("design:paramtypes", [microservices_1.ClientProxy,
-        microservices_1.ClientProxy])
+    __metadata("design:paramtypes", [microservices_1.ClientKafka,
+        microservices_1.ClientKafka])
 ], AuthGuard);
 //# sourceMappingURL=auth.guard.js.map

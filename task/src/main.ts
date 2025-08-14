@@ -1,19 +1,21 @@
 import {NestFactory} from "@nestjs/core";
-import {RmqOptions, Transport} from "@nestjs/microservices";
+import {KafkaOptions, Transport} from "@nestjs/microservices";
 import {TaskModule} from "./task.module";
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice(TaskModule, {
-    transport: Transport.RMQ,
+    transport: Transport.KAFKA,
     options: {
-      urls: ["amqp://localhost:5672"],
-      queue: "task-service",
-      queueOptions: {
-        durable: false,
+      client: {
+        clientId: "task",
+        brokers: ["localhost:29092"],
+      },
+      consumer: {
+        groupId: "task-consumer",
       },
     },
-  } as RmqOptions);
+  } as KafkaOptions);
   await app.listen();
-  console.log("task service: localhost:4003");
+  console.log("task service is running");
 }
 bootstrap();

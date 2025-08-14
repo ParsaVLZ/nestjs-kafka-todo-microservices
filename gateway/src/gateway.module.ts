@@ -1,60 +1,53 @@
 import {Module} from "@nestjs/common";
-import {ClientProxyFactory, RmqOptions, Transport} from "@nestjs/microservices";
+import {ClientsModule, Transport} from "@nestjs/microservices";
 import {TaskController} from "./task.controller";
 import {UserController} from "./user.controller";
 
 @Module({
-  imports: [],
-  controllers: [UserController, TaskController],
-  providers: [
-    {
-      provide: "USER_SERVICE",
-      useFactory() {
-        return ClientProxyFactory.create({
-          transport: Transport.RMQ,
-          options: {
-            urls: ["amqp://localhost:5672"],
-            queue: "user-service",
-            queueOptions: {
-              durable: false,
-            },
+  imports: [
+    ClientsModule.register([
+      {
+        name: "USER_SERVICE",
+        transport: Transport.KAFKA,
+        options: {
+          client: {
+            clientId: "user",
+            brokers: ["localhost:29092"],
           },
-        } as RmqOptions);
-      },
-      inject: [],
-    },
-    {
-      provide: "TOKEN_SERVICE",
-      useFactory() {
-        return ClientProxyFactory.create({
-          transport: Transport.RMQ,
-          options: {
-            urls: ["amqp://localhost:5672"],
-            queue: "token-service",
-            queueOptions: {
-              durable: false,
-            },
+          consumer: {
+            groupId: "user-consumer",
           },
-        } as RmqOptions);
+        },
       },
-      inject: [],
-    },
-    {
-      provide: "TASK_SERVICE",
-      useFactory() {
-        return ClientProxyFactory.create({
-          transport: Transport.RMQ,
-          options: {
-            urls: ["amqp://localhost:5672"],
-            queue: "task-service",
-            queueOptions: {
-              durable: false,
-            },
+      {
+        name: "TOKEN_SERVICE",
+        transport: Transport.KAFKA,
+        options: {
+          client: {
+            clientId: "token",
+            brokers: ["localhost:29092"],
           },
-        } as RmqOptions);
+          consumer: {
+            groupId: "token-consumer",
+          },
+        },
       },
-      inject: [],
-    },
+      {
+        name: "TASK_SERVICE",
+        transport: Transport.KAFKA,
+        options: {
+          client: {
+            clientId: "task",
+            brokers: ["localhost:29092"],
+          },
+          consumer: {
+            groupId: "task-consumer",
+          },
+        },
+      },
+    ]),
   ],
+  controllers: [UserController, TaskController],
+  providers: [],
 })
 export class GatewayModule {}
