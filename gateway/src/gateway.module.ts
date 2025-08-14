@@ -1,52 +1,59 @@
-import { Module } from '@nestjs/common';
-import { UserController } from './user.controller';
-import { ClientProxyFactory, Transport } from '@nestjs/microservices';
-import { Services } from './enum/service';
-import { ConfigService } from "./config/config.service";
-import { ConfigModule } from '@nestjs/config';
+import {Module} from "@nestjs/common";
+import {ClientProxyFactory, RmqOptions, Transport} from "@nestjs/microservices";
+import {TaskController} from "./task.controller";
+import {UserController} from "./user.controller";
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({ isGlobal: true })
-  ],
-  controllers: [UserController],
+  imports: [],
+  controllers: [UserController, TaskController],
   providers: [
-    ConfigService,
     {
-      provide:"USER_SERVICE",
-      useFactory(){
+      provide: "USER_SERVICE",
+      useFactory() {
         return ClientProxyFactory.create({
-          transport: Transport.TCP, 
-          options: 
-            {
-              port:4001,
-              host:"0.0.0.0",
-            }
-          });
+          transport: Transport.RMQ,
+          options: {
+            urls: ["amqp://localhost:5672"],
+            queue: "user-service",
+            queueOptions: {
+              durable: false,
+            },
+          },
+        } as RmqOptions);
       },
-      inject: []
+      inject: [],
     },
     {
-      provide:"TOKEN_SERVICE",
-      useFactory(){
+      provide: "TOKEN_SERVICE",
+      useFactory() {
         return ClientProxyFactory.create({
-          transport: Transport.TCP, 
-          options: 
-            {
-              port:4002,
-              host:"0.0.0.0",
-            }
-          });
+          transport: Transport.RMQ,
+          options: {
+            urls: ["amqp://localhost:5672"],
+            queue: "token-service",
+            queueOptions: {
+              durable: false,
+            },
+          },
+        } as RmqOptions);
       },
-      inject: []
+      inject: [],
     },
     {
-      provide: Services.TASK,
-      useFactory(configService: ConfigService) {
-        const taskServiceOption = configService.get("taskService");
-        return ClientProxyFactory.create(taskServiceOption);
+      provide: "TASK_SERVICE",
+      useFactory() {
+        return ClientProxyFactory.create({
+          transport: Transport.RMQ,
+          options: {
+            urls: ["amqp://localhost:5672"],
+            queue: "task-service",
+            queueOptions: {
+              durable: false,
+            },
+          },
+        } as RmqOptions);
       },
-      inject: [ConfigService],
+      inject: [],
     },
   ],
 })

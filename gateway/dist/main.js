@@ -17,8 +17,8 @@ async function bootstrap() {
         .build();
     const document = swagger_1.SwaggerModule.createDocument(app, options);
     swagger_1.SwaggerModule.setup("/", app, document);
-    await app.listen(4000, () => {
-        console.log("gateway running on: http://localhost:4000");
+    await app.listen(6500, () => {
+        console.log("gateway running on: http://localhost:6500");
     });
 }
 bootstrap();
